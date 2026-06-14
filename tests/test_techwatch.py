@@ -36,6 +36,16 @@ def test_mark_read(conn):
     assert len(repo.list_articles(conn, unread_only=True)) == 0
 
 
+def test_list_orders_by_published_desc(conn):
+    feed_id = repo.add_feed(conn, "https://ex.com/feed")
+    repo.add_article(conn, feed_id, "Vieux", "https://ex.com/old",
+                     published="2020-01-01T00:00:00Z")
+    repo.add_article(conn, feed_id, "Recent", "https://ex.com/new",
+                     published="2026-01-01T00:00:00Z")
+    titles = [r["title"] for r in repo.list_articles(conn)]
+    assert titles == ["Recent", "Vieux"]
+
+
 def test_tagging_and_filter(conn):
     feed_id = repo.add_feed(conn, "https://ex.com/feed")
     art = repo.add_article(conn, feed_id, "AI piece", "https://ex.com/3")

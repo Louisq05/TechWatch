@@ -40,7 +40,9 @@ def list_articles(conn, unread_only=False, tag=None):
         where.append("a.is_read = 0")
     if where:
         sql += "WHERE " + " AND ".join(where) + " "
-    sql += "ORDER BY a.fetched_at DESC"
+    # Newest first by publication date; articles without one fall back to
+    # when they were fetched. NULL published sorts last under DESC in SQLite.
+    sql += "ORDER BY a.published DESC, a.fetched_at DESC"
     return conn.execute(sql, params).fetchall()
 
 
