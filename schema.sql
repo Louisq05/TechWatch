@@ -36,3 +36,9 @@ CREATE TABLE IF NOT EXISTS last_view (
     pos        INTEGER PRIMARY KEY,
     article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE
 );
+
+-- Small key/value store for app state (e.g. when the last digest was sent).
+CREATE TABLE IF NOT EXISTS meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);

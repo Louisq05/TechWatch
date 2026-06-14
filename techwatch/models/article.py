@@ -69,6 +69,31 @@ def resolve_view(conn, pos):
     return row["article_id"] if row else None
 
 
+def articles_since(conn, since):
+    """Articles fetched strictly after the SQLite timestamp `since`, newest
+    first. Used to build a digest of what arrived since the last one."""
+    return conn.execute(
+        "SELECT a.* FROM articles a WHERE a.fetched_at > ? "
+        "ORDER BY a.published DESC, a.fetched_at DESC",
+        (since,),
+    ).fetchall()
+
+
+def get_meta(conn, key):
+    row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def touch_meta_now(conn, key):
+    """Store the current SQLite time under `key` (same clock as fetched_at)."""
+    conn.execute(
+        "INSERT INTO meta (key, value) VALUES (?, datetime('now')) "
+        "ON CONFLICT(key) DO UPDATE SET value = datetime('now')",
+        (key,),
+    )
+    conn.commit()
+
+
 def mark_read(conn, article_id):
     conn.execute("UPDATE articles SET is_read = 1 WHERE id = ?", (article_id,))
     conn.commit()

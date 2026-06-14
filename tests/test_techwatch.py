@@ -1,5 +1,7 @@
 """Tests for the data layer (no network)."""
 from techwatch.models import article as repo
+from techwatch.views import email as email_view
+from techwatch.controllers import digest, mailer
 
 
 def test_schema_creates_tables(conn):
@@ -76,3 +78,39 @@ def test_view_maps_display_number_to_article(conn):
     assert repo.resolve_view(conn, 1) == recent
     assert repo.resolve_view(conn, 2) == old
     assert repo.resolve_view(conn, 99) is None
+
+
+def test_articles_since(conn):
+    feed_id = repo.add_feed(conn, "https://ex.com/feed")
+    repo.add_article(conn, feed_id, "A", "https://ex.com/a")
+    assert len(repo.articles_since(conn, "1970-01-01 00:00:00")) == 1
+    assert len(repo.articles_since(conn, "2999-01-01 00:00:00")) == 0
+
+
+def test_meta_roundtrip(conn):
+    assert repo.get_meta(conn, "k") is None
+    repo.touch_meta_now(conn, "k")
+    assert repo.get_meta(conn, "k") is not None
+
+
+def test_format_digest_lists_links_and_escapes(conn):
+    feed_id = repo.add_feed(conn, "https://ex.com/feed")
+    repo.add_article(conn, feed_id, "Hello <b>", "https://ex.com/x")
+    subject, text, html = email_view.format_digest(repo.list_articles(conn))
+    assert "1" in subject
+    assert "https://ex.com/x" in text
+    assert "&lt;b&gt;" in html  # titles are HTML-escaped
+
+
+def test_send_digest_sends_new_then_nothing(conn, monkeypatch):
+    feed_id = repo.add_feed(conn, "https://ex.com/feed")
+    repo.add_article(conn, feed_id, "A", "https://ex.com/a")
+    repo.add_article(conn, feed_id, "B", "https://ex.com/b")
+    captured = {}
+    monkeypatch.setattr(
+        mailer, "send",
+        lambda subject, text, html: captured.update(subject=subject) or "to@x",
+    )
+    assert digest.send_digest(conn) == 2          # both new articles sent
+    assert "2" in captured["subject"]
+    assert digest.send_digest(conn) == 0          # nothing new -> no send

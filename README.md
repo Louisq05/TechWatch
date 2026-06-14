@@ -31,8 +31,8 @@ en haut), `list --tag X` par ordre d'attribution du tag (plus récent en haut).
 
 ## Automatisation
 
-Le pipeline `techwatch/pipeline.py` récupère les nouveautés sans interaction
-(plus tard : tri puis envoi d'un rapport par mail). Pour le lancer à la main :
+Le pipeline `techwatch/pipeline.py` récupère les nouveautés puis envoie un
+rapport par e-mail (voir ci-dessous). Pour le lancer à la main :
 
 ```bash
 python auto.py          # ou : python -m techwatch.pipeline
@@ -52,6 +52,21 @@ rattrapage si la machine était éteinte). Pour la supprimer :
 ```powershell
 Unregister-ScheduledTask -TaskName "TechwatchRefresh" -Confirm:$false
 ```
+
+## Rapport par e-mail
+
+Après chaque refresh, le pipeline envoie par e-mail les articles arrivés depuis
+le dernier rapport (jamais deux fois le même). La configuration se fait via un
+fichier `.env` à la racine, **ignoré par git** :
+
+```bash
+cp .env.example .env     # puis renseigne tes valeurs
+```
+
+Pour Gmail : active la validation en 2 étapes puis crée un *mot de passe
+d'application* (https://myaccount.google.com/apppasswords) et reporte-le dans
+`TECHWATCH_SMTP_PASSWORD`. Si le SMTP n'est pas configuré, le refresh fonctionne
+quand même — seul l'envoi est ignoré (un avertissement est journalisé).
 
 ## Tests
 

@@ -9,18 +9,26 @@ import logging
 
 from .models import db
 from .controllers import library
+from .controllers import digest
 
 LOG_PATH = db.PROJECT_ROOT / "techwatch.log"
 
 
 def run():
-    """Fetch new articles from every feed. Return the number added."""
+    """Fetch new articles, then e-mail a digest. Return (added, sent)."""
     conn = db.connect()
     db.init_db(conn)
     added = library.refresh(conn)
     logging.info("refresh terminé : %d nouvel(s) article(s)", added)
+    try:
+        sent = digest.send_digest(conn)
+    except Exception:
+        # A mail failure (e.g. SMTP not configured yet) must not lose the
+        # successful refresh above.
+        logging.exception("digest : envoi impossible")
+        sent = 0
     conn.close()
-    return added
+    return added, sent
 
 
 def main():
