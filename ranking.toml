@@ -1,0 +1,53 @@
+# ============================================================
+#  techwatch — réglages du tri de pertinence
+#  Le score d'un article = somme des poids actifs ci-dessous.
+#  Ajuste librement les nombres : positif = remonte, négatif = enfonce.
+# ============================================================
+
+# --- Thèmes -------------------------------------------------
+# Un thème rapporte son "poids" si AU MOINS un de ses mots-clés apparaît dans
+# le titre ou le résumé (recherche par mot entier, insensible à la casse et aux
+# accents). Chaque thème compte une seule fois par article.
+
+[[theme]]
+nom = "IA"
+poids = 3.0
+mots = ["ia", "intelligence artificielle", "ai", "llm", "gpt", "chatgpt",
+        "openai", "anthropic", "claude", "gemini", "mistral", "copilot",
+        "machine learning", "deep learning", "neural", "modele", "model"]
+
+[[theme]]
+nom = "Cyber"
+poids = 3.0
+mots = ["cyber", "securite", "security", "faille", "vulnerabilite",
+        "vulnerability", "exploit", "malware", "ransomware", "hack", "hacker",
+        "piratage", "breach", "phishing", "cve", "mot de passe", "password"]
+
+[[theme]]
+nom = "Espace"
+poids = 3.0
+mots = ["espace", "space", "nasa", "spacex", "fusee", "rocket", "satellite",
+        "orbite", "orbital", "mars", "lune", "lunar", "telescope", "astronom"]
+
+[[theme]]
+nom = "Dev de niche"
+poids = -2.0
+mots = ["linux", "reactos", "freebsd", "kernel", "systemd", "distro", "distrib",
+        "exif", "compiler", "compilateur", "changelog", "deprecated", "rust",
+        "golang", "syntax"]
+
+# --- Sources ------------------------------------------------
+# Bonus/malus par nom de flux (tel qu'affiché dans la liste).
+[sources]
+"MIT Technology Review" = 2.0
+
+# --- Fraîcheur ----------------------------------------------
+# Bonus décroissant linéairement : maximal aujourd'hui, nul au-delà de "jours".
+[fraicheur]
+poids = 1.5
+jours = 7
+
+# --- Digest -------------------------------------------------
+# Nombre maximum d'articles dans le mail (les mieux classés sont gardés).
+[digest]
+max = 15

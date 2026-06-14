@@ -53,6 +53,14 @@ rattrapage si la machine était éteinte). Pour la supprimer :
 Unregister-ScheduledTask -TaskName "TechwatchRefresh" -Confirm:$false
 ```
 
+## Tri de pertinence
+
+Chaque article reçoit un score de pertinence (`techwatch/controllers/ranking.py`),
+entièrement piloté par le fichier **`ranking.toml`** que tu édites : thèmes et
+mots-clés (poids positif pour remonter, négatif pour enfoncer), bonus par
+source, et fraîcheur. Le matching se fait sur le titre (mot entier, insensible à
+la casse/accents). Le rapport par e-mail n'envoie que les mieux classés.
+
 ## Rapport par e-mail
 
 Après chaque refresh, le pipeline envoie par e-mail les articles arrivés depuis

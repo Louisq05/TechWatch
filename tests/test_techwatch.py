@@ -1,7 +1,7 @@
 """Tests for the data layer (no network)."""
 from techwatch.models import article as repo
 from techwatch.views import email as email_view
-from techwatch.controllers import digest, mailer
+from techwatch.controllers import digest, mailer, ranking
 
 
 def test_schema_creates_tables(conn):
@@ -102,15 +102,58 @@ def test_format_digest_lists_links_and_escapes(conn):
     assert "&lt;b&gt;" in html  # titles are HTML-escaped
 
 
-def test_send_digest_sends_new_then_nothing(conn, monkeypatch):
+def test_send_digest_ranks_filters_and_marks(conn, monkeypatch):
     feed_id = repo.add_feed(conn, "https://ex.com/feed")
-    repo.add_article(conn, feed_id, "A", "https://ex.com/a")
-    repo.add_article(conn, feed_id, "B", "https://ex.com/b")
+    repo.add_article(conn, feed_id, "Big AI news", "https://ex.com/a")
+    repo.add_article(conn, feed_id, "Boring linux kernel changelog", "https://ex.com/b")
     captured = {}
     monkeypatch.setattr(
         mailer, "send",
-        lambda subject, text, html: captured.update(subject=subject) or "to@x",
+        lambda subject, text, html: captured.update(text=text) or "to@x",
     )
-    assert digest.send_digest(conn) == 2          # both new articles sent
-    assert "2" in captured["subject"]
-    assert digest.send_digest(conn) == 0          # nothing new -> no send
+    cfg = {
+        "theme": [
+            {"nom": "IA", "poids": 3.0, "mots": ["ai"]},
+            {"nom": "Niche", "poids": -2.0, "mots": ["linux", "kernel"]},
+        ],
+        "digest": {"max": 15},
+    }
+    # Only the AI article scores positively; the niche one is filtered out.
+    assert digest.send_digest(conn, cfg) == 1
+    assert "Big AI news" in captured["text"]
+    assert "linux" not in captured["text"].lower()
+    assert digest.send_digest(conn, cfg) == 0     # marker advanced -> nothing new
+
+
+_RANK_CFG = {
+    "theme": [
+        {"nom": "IA", "poids": 3.0, "mots": ["ai", "claude"]},
+        {"nom": "Niche", "poids": -2.0, "mots": ["linux", "kernel"]},
+    ],
+    "sources": {"MIT": 2.0},
+}
+
+
+def _row(title, feed_title="X"):
+    return {"title": title, "summary": None, "published": None,
+            "feed_title": feed_title}
+
+
+def test_score_rewards_themes_and_penalises_niche():
+    s_ai = ranking.score(_row("New Claude model is out"), _RANK_CFG)[0]
+    s_niche = ranking.score(_row("Linux kernel 6.9 changelog"), _RANK_CFG)[0]
+    s_neutral = ranking.score(_row("A story about cooking"), _RANK_CFG)[0]
+    assert s_ai > s_neutral > s_niche
+
+
+def test_score_word_boundaries_and_source_bonus():
+    # "ai" must not match inside "rain"; source bonus applies by feed title.
+    assert ranking.score(_row("Rain in Spain"), _RANK_CFG)[0] == 0.0
+    assert ranking.score(_row("Plain news", feed_title="MIT"), _RANK_CFG)[0] == 2.0
+
+
+def test_rank_orders_by_score():
+    rows = [_row("cooking"), _row("Claude AI breakthrough"), _row("linux kernel")]
+    ordered = ranking.rank(rows, _RANK_CFG)
+    assert ordered[0][2]["title"] == "Claude AI breakthrough"
+    assert ordered[-1][2]["title"] == "linux kernel"

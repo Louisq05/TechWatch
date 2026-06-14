@@ -71,9 +71,10 @@ def resolve_view(conn, pos):
 
 def articles_since(conn, since):
     """Articles fetched strictly after the SQLite timestamp `since`, newest
-    first. Used to build a digest of what arrived since the last one."""
+    first, with their source feed title. Used to build the digest."""
     return conn.execute(
-        "SELECT a.* FROM articles a WHERE a.fetched_at > ? "
+        "SELECT a.*, f.title AS feed_title FROM articles a "
+        "JOIN feeds f ON f.id = a.feed_id WHERE a.fetched_at > ? "
         "ORDER BY a.published DESC, a.fetched_at DESC",
         (since,),
     ).fetchall()
