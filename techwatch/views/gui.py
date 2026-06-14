@@ -8,6 +8,60 @@ from ..models import db
 from ..models import article as repo
 from ..controllers import library
 
+# Dark palette (editor-like) and fonts, kept in one place so the theme setup
+# and the per-row colouring stay in sync.
+DARK = {
+    "bg": "#1e1f22",        # window / frames
+    "surface": "#2b2d31",   # entries, list, status bar
+    "text": "#e3e5e8",      # bright text (unread)
+    "muted": "#9aa0a6",     # dimmed text (read, headings)
+    "accent": "#5865f2",    # selection / pressed buttons
+    "accent_hover": "#4752c4",
+    "border": "#3a3c40",
+}
+FONT = ("Segoe UI", 10)
+FONT_BOLD = ("Segoe UI", 9, "bold")
+
+
+def _apply_dark_theme(root):
+    """Paint the whole window with a dark palette via a tuned 'clam' theme."""
+    c = DARK
+    root.configure(bg=c["bg"])
+    style = ttk.Style(root)
+    style.theme_use("clam")  # the most styleable built-in ttk theme
+
+    style.configure(".", background=c["bg"], foreground=c["text"], font=FONT,
+                    bordercolor=c["border"], focuscolor=c["accent"])
+    style.configure("TFrame", background=c["bg"])
+    style.configure("TLabel", background=c["bg"], foreground=c["text"])
+    style.configure("Status.TLabel", background=c["surface"],
+                    foreground=c["muted"], padding=(8, 4))
+    style.configure("TLabelframe", background=c["bg"], bordercolor=c["border"])
+    style.configure("TLabelframe.Label", background=c["bg"],
+                    foreground=c["muted"], font=FONT_BOLD)
+
+    style.configure("TButton", background=c["surface"], foreground=c["text"],
+                    bordercolor=c["surface"], padding=(10, 5), relief="flat")
+    style.map("TButton",
+              background=[("active", c["accent_hover"]), ("pressed", c["accent"])],
+              foreground=[("active", "#ffffff")])
+
+    style.configure("TEntry", fieldbackground=c["surface"], foreground=c["text"],
+                    insertcolor=c["text"], bordercolor=c["border"], padding=4)
+
+    style.configure("Treeview", background=c["surface"],
+                    fieldbackground=c["surface"], foreground=c["text"],
+                    rowheight=28, borderwidth=0, font=FONT)
+    style.configure("Treeview.Heading", background=c["bg"], foreground=c["muted"],
+                    font=FONT_BOLD, relief="flat", padding=6)
+    style.map("Treeview.Heading", background=[("active", c["surface"])])
+    style.map("Treeview", background=[("selected", c["accent"])],
+              foreground=[("selected", "#ffffff")])
+
+    style.configure("Vertical.TScrollbar", background=c["surface"],
+                    troughcolor=c["bg"], bordercolor=c["bg"],
+                    arrowcolor=c["muted"])
+
 
 class TechwatchGUI:
     """A small window to refresh feeds, browse articles, add feeds and tag."""
@@ -20,6 +74,7 @@ class TechwatchGUI:
 
         root.title("techwatch")
         root.geometry("760x480")
+        _apply_dark_theme(root)
         self._build_widgets()
         self._reload()
         self._poll_queue()
@@ -50,6 +105,9 @@ class TechwatchGUI:
         self.tree.heading("titre", text="Titre")
         self.tree.column("lu", width=40, anchor="center", stretch=False)
         self.tree.column("titre", anchor="w")
+        # Unread rows stand out (bright), read rows are dimmed.
+        self.tree.tag_configure("unread", foreground=DARK["text"])
+        self.tree.tag_configure("read", foreground=DARK["muted"])
         sb = ttk.Scrollbar(mid, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         self.tree.pack(side="left", fill="both", expand=True)
@@ -75,7 +133,7 @@ class TechwatchGUI:
         # Status bar.
         self.status = tk.StringVar(value="Prêt.")
         ttk.Label(
-            self.root, textvariable=self.status, relief="sunken", anchor="w"
+            self.root, textvariable=self.status, style="Status.TLabel", anchor="w"
         ).pack(fill="x", side="bottom")
 
     # --- data <-> view -------------------------------------------------------
@@ -84,8 +142,12 @@ class TechwatchGUI:
         self.tree.delete(*self.tree.get_children())
         rows = repo.list_articles(self.conn, tag=self._current_tag)
         for r in rows:
-            flag = "" if r["is_read"] else "●"
-            self.tree.insert("", "end", iid=str(r["id"]), values=(flag, r["title"]))
+            unread = not r["is_read"]
+            flag = "●" if unread else ""
+            self.tree.insert(
+                "", "end", iid=str(r["id"]), values=(flag, r["title"]),
+                tags=("unread" if unread else "read",),
+            )
         scope = f"tag « {self._current_tag} »" if self._current_tag else "tous"
         self.status.set(f"{len(rows)} article(s) — {scope}.")
 
