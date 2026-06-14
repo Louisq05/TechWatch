@@ -36,3 +36,7 @@ def _migrate(conn):
             "UPDATE article_tags SET tagged_at = datetime('now') "
             "WHERE tagged_at IS NULL"
         )
+    article_cols = {r["name"] for r in conn.execute("PRAGMA table_info(articles)")}
+    for col in ("author", "image"):
+        if col not in article_cols:
+            conn.execute(f"ALTER TABLE articles ADD COLUMN {col} TEXT")

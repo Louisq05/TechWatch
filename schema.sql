@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS articles (
     link       TEXT NOT NULL UNIQUE,
     summary    TEXT,
     published  TEXT,
+    author     TEXT,
+    image      TEXT,
     is_read    INTEGER NOT NULL DEFAULT 0,
     fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

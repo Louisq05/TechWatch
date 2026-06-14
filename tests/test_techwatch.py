@@ -94,12 +94,17 @@ def test_meta_roundtrip(conn):
 
 
 def test_format_digest_lists_links_and_escapes(conn):
-    feed_id = repo.add_feed(conn, "https://ex.com/feed")
-    repo.add_article(conn, feed_id, "Hello <b>", "https://ex.com/x")
-    subject, text, html = email_view.format_digest(repo.list_articles(conn))
+    feed_id = repo.add_feed(conn, "https://ex.com/feed", "Ma Source")
+    repo.add_article(conn, feed_id, "Hello <b>", "https://ex.com/x",
+                     author="Jane Doe")
+    rows = repo.articles_since(conn, "1970-01-01 00:00:00")
+    items = [(5.0, ["IA"], r) for r in rows]
+    subject, text, html = email_view.format_digest(items)
     assert "1" in subject
     assert "https://ex.com/x" in text
-    assert "&lt;b&gt;" in html  # titles are HTML-escaped
+    assert "&lt;b&gt;" in html         # titles are HTML-escaped
+    assert "Ma Source" in html         # source shown
+    assert "Jane Doe" in html          # author shown when present
 
 
 def test_send_digest_ranks_filters_and_marks(conn, monkeypatch):

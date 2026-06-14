@@ -17,7 +17,7 @@ def refresh(conn):
         for e in entries:
             if repo.add_article(
                 conn, feed["id"], e["title"], e["link"],
-                e["summary"], e["published"],
+                e["summary"], e["published"], e.get("author"), e.get("image"),
             ):
                 added += 1
     return added

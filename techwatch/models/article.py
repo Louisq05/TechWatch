@@ -15,12 +15,14 @@ def get_feeds(conn):
     return conn.execute("SELECT * FROM feeds ORDER BY title").fetchall()
 
 
-def add_article(conn, feed_id, title, link, summary=None, published=None):
+def add_article(conn, feed_id, title, link, summary=None, published=None,
+                author=None, image=None):
     """Insert an article. Return id, or None if the link already exists."""
     cur = conn.execute(
-        "INSERT OR IGNORE INTO articles (feed_id, title, link, summary, published) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (feed_id, title, link, summary, published),
+        "INSERT OR IGNORE INTO articles "
+        "(feed_id, title, link, summary, published, author, image) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (feed_id, title, link, summary, published, author, image),
     )
     conn.commit()
     return cur.lastrowid if cur.rowcount else None

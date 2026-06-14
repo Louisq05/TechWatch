@@ -1,31 +1,123 @@
-"""Render a digest of articles as an e-mail (plain text + HTML)."""
+"""Render a digest of articles as an e-mail (plain text + HTML newsletter).
+
+format_digest takes a list of (score, reasons, row) items — the output of
+controllers.ranking.rank, already filtered/truncated by the digest.
+"""
 from datetime import date
 from html import escape
 
+# Theme -> (emoji, colour). Order here drives the order of sections.
+THEME_STYLE = [
+    ("IA", "🤖", "#5865f2"),
+    ("Cyber", "🔒", "#e0533d"),
+    ("Espace", "🚀", "#9b59b6"),
+]
+OTHER = ("Autre", "📰", "#6c7a89")
 
-def format_digest(rows):
-    """Return (subject, text_body, html_body) for the given article rows."""
-    n = len(rows)
-    subject = f"techwatch — {n} nouvel(s) article(s) ({date.today():%d/%m/%Y})"
 
-    text_lines = [f"{n} nouvel(s) article(s) :", ""]
-    for r in rows:
-        text_lines.append(f"- {r['title']}")
-        text_lines.append(f"  {r['link']}")
-    text_body = "\n".join(text_lines)
+def _has(row, key):
+    try:
+        return key in row.keys()      # sqlite3.Row
+    except AttributeError:
+        return key in row             # plain dict
 
-    items = "\n".join(
-        '<li style="margin-bottom:12px">'
-        f'<a href="{escape(r["link"])}" '
-        'style="color:#5865f2;text-decoration:none;font-weight:600">'
-        f'{escape(r["title"])}</a></li>'
-        for r in rows
+
+def _field(row, key):
+    return row[key] if _has(row, key) and row[key] else None
+
+
+def _primary_theme(reasons):
+    """Pick the section an item belongs to, by first matching positive theme."""
+    for name, emoji, color in THEME_STYLE:
+        if name in reasons:
+            return name, emoji, color
+    return OTHER
+
+
+def _stars(score):
+    """Map a score to a 1..5 star relevance badge."""
+    n = (5 if score >= 6 else 4 if score >= 4.5 else 3 if score >= 3
+         else 2 if score >= 1.5 else 1)
+    return "★" * n + "☆" * (5 - n)
+
+
+def _meta(row):
+    """'Source · par Auteur' (auteur optionnel)."""
+    parts = []
+    if _field(row, "feed_title"):
+        parts.append(row["feed_title"])
+    if _field(row, "author"):
+        parts.append(f"par {row['author']}")
+    return " · ".join(parts)
+
+
+def _group(items):
+    """Group items by primary theme, themes first then Autre."""
+    sections = {}
+    for score, reasons, row in items:
+        sections.setdefault(_primary_theme(reasons), []).append((score, row))
+    order = list(THEME_STYLE) + [OTHER]
+    return [(key, sections[key]) for key in order if key in sections]
+
+
+def _article_html(score, row):
+    title, link = escape(row["title"]), escape(row["link"])
+    meta = escape(_meta(row))
+    img = _field(row, "image")
+    img_cell = (
+        f'<td width="96" valign="top"><img src="{escape(img)}" width="84" '
+        f'style="border-radius:6px" alt=""></td>' if img else ""
     )
+    return (
+        '<table cellpadding="0" cellspacing="0" style="margin:12px 0;width:100%">'
+        f'<tr>{img_cell}<td valign="top">'
+        f'<a href="{link}" style="color:#1e1f22;text-decoration:none;'
+        f'font-weight:600;font-size:15px">{title}</a><br>'
+        f'<span style="color:#6c7a89;font-size:13px">{meta}</span> '
+        f'<span style="color:#f1c40f;font-size:13px" title="pertinence">'
+        f'{_stars(score)}</span>'
+        "</td></tr></table>"
+    )
+
+
+def format_digest(items):
+    """items: list of (score, reasons, row). Return (subject, text, html)."""
+    n = len(items)
+    today = date.today()
+    subject = f"techwatch — {n} article(s) du jour ({today:%d/%m/%Y})"
+    grouped = _group(items)
+
+    # --- plain text ---
+    tlines = [f"techwatch — {today:%d/%m/%Y} · {n} article(s)", ""]
+    for (name, _emoji, _color), arts in grouped:
+        tlines.append(f"== {name} ==")
+        for score, row in arts:
+            tlines.append(f"- {row['title']}  ({_meta(row)})  {_stars(score)}")
+            tlines.append(f"  {row['link']}")
+        tlines.append("")
+    text_body = "\n".join(tlines)
+
+    # --- HTML newsletter ---
+    blocks = []
+    for (name, emoji, color), arts in grouped:
+        blocks.append(
+            f'<h2 style="color:{color};border-bottom:2px solid {color};'
+            f'padding-bottom:4px;margin:24px 0 8px;font-size:16px">'
+            f"{emoji} {escape(name)}</h2>"
+        )
+        blocks += [_article_html(score, row) for score, row in arts]
+
     html_body = (
-        '<div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;'
-        'color:#1e1f22">'
-        f'<h2>techwatch — {n} nouvel(s) article(s)</h2>'
-        f'<ul style="list-style:none;padding:0">{items}</ul>'
-        '</div>'
+        '<div style="font-family:Segoe UI,Arial,sans-serif;max-width:680px;'
+        'margin:auto;color:#1e1f22;padding:8px">'
+        '<div style="background:#1e1f22;color:#fff;padding:14px 18px;'
+        'border-radius:8px">'
+        '<span style="font-size:20px;font-weight:700">techwatch</span>'
+        f'<span style="float:right;color:#9aa0a6;font-size:13px">'
+        f"{today:%d/%m/%Y} · {n} articles</span></div>"
+        + "".join(blocks)
+        + '<div style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;'
+        'color:#9aa0a6;font-size:12px">Généré par techwatch · '
+        "curation automatique de tes sources</div></div>"
     )
     return subject, text_body, html_body
