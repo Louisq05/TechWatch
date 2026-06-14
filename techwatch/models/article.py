@@ -29,6 +29,9 @@ def add_article(conn, feed_id, title, link, summary=None, published=None):
 def list_articles(conn, unread_only=False, tag=None):
     sql = "SELECT a.* FROM articles a JOIN feeds f ON f.id = a.feed_id "
     params, where = [], []
+    # Default view: newest first by publication date; articles without one fall
+    # back to when they were fetched. NULL published sorts last under DESC.
+    order = "a.published DESC, a.fetched_at DESC"
     if tag is not None:
         sql += (
             "JOIN article_tags at ON at.article_id = a.id "
@@ -36,14 +39,34 @@ def list_articles(conn, unread_only=False, tag=None):
         )
         where.append("t.name = ?")
         params.append(tag)
+        # Tag view: most recently tagged first (rowid breaks within-second ties).
+        order = "at.tagged_at DESC, at.rowid DESC"
     if unread_only:
         where.append("a.is_read = 0")
     if where:
         sql += "WHERE " + " AND ".join(where) + " "
-    # Newest first by publication date; articles without one fall back to
-    # when they were fetched. NULL published sorts last under DESC in SQLite.
-    sql += "ORDER BY a.published DESC, a.fetched_at DESC"
+    sql += "ORDER BY " + order
     return conn.execute(sql, params).fetchall()
+
+
+def save_view(conn, article_ids):
+    """Remember the order of the last listing so display numbers (1-based) can
+    be mapped back to article ids by read/tag commands."""
+    conn.execute("DELETE FROM last_view")
+    conn.executemany(
+        "INSERT INTO last_view (pos, article_id) VALUES (?, ?)",
+        list(enumerate(article_ids, start=1)),
+    )
+    conn.commit()
+
+
+def resolve_view(conn, pos):
+    """Return the article id shown at display number `pos`, or None if the
+    number is out of range (or no listing has been displayed yet)."""
+    row = conn.execute(
+        "SELECT article_id FROM last_view WHERE pos = ?", (pos,)
+    ).fetchone()
+    return row["article_id"] if row else None
 
 
 def mark_read(conn, article_id):
@@ -57,8 +80,10 @@ def add_tag(conn, article_id, tag_name):
     tag_id = conn.execute(
         "SELECT id FROM tags WHERE name = ?", (tag_name,)
     ).fetchone()["id"]
+    # Record when the tag was applied so tag listings can order by recency.
     conn.execute(
-        "INSERT OR IGNORE INTO article_tags (article_id, tag_id) VALUES (?, ?)",
+        "INSERT OR IGNORE INTO article_tags (article_id, tag_id, tagged_at) "
+        "VALUES (?, ?, datetime('now'))",
         (article_id, tag_id),
     )
     conn.commit()

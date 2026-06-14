@@ -28,10 +28,10 @@ def main(argv=None):
     p.add_argument("--tag")
 
     p = sub.add_parser("read", help="Marquer un article comme lu")
-    p.add_argument("article_id", type=int)
+    p.add_argument("num", type=int, help="numéro affiché dans la dernière liste")
 
     p = sub.add_parser("tag", help="Taguer un article")
-    p.add_argument("article_id", type=int)
+    p.add_argument("num", type=int, help="numéro affiché dans la dernière liste")
     p.add_argument("tag")
 
     args = parser.parse_args(argv)
@@ -45,13 +45,22 @@ def main(argv=None):
         print(f"{library.refresh(conn)} nouvel(s) article(s).")
     elif args.cmd == "list":
         rows = repo.list_articles(conn, unread_only=args.unread, tag=args.tag)
+        repo.save_view(conn, [r["id"] for r in rows])
         print(console.format_articles(rows))
     elif args.cmd == "read":
-        repo.mark_read(conn, args.article_id)
-        print(f"Article #{args.article_id} marqué comme lu.")
+        article_id = repo.resolve_view(conn, args.num)
+        if article_id is None:
+            print(f"Numéro {args.num} introuvable. Lance d'abord « list ».")
+        else:
+            repo.mark_read(conn, article_id)
+            print(f"Article n°{args.num} marqué comme lu.")
     elif args.cmd == "tag":
-        repo.add_tag(conn, args.article_id, args.tag)
-        print(f"Article #{args.article_id} tagué « {args.tag} ».")
+        article_id = repo.resolve_view(conn, args.num)
+        if article_id is None:
+            print(f"Numéro {args.num} introuvable. Lance d'abord « list ».")
+        else:
+            repo.add_tag(conn, article_id, args.tag)
+            print(f"Article n°{args.num} tagué « {args.tag} ».")
 
 
 if __name__ == "__main__":

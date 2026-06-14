@@ -26,5 +26,13 @@ CREATE TABLE IF NOT EXISTS tags (
 CREATE TABLE IF NOT EXISTS article_tags (
     article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
     tag_id     INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    tagged_at  TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (article_id, tag_id)
+);
+
+-- Ephemeral cache: maps the display numbers (1..N) of the last `list` output
+-- to article ids, so `read N` / `tag N` resolve the number the user just saw.
+CREATE TABLE IF NOT EXISTS last_view (
+    pos        INTEGER PRIMARY KEY,
+    article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE
 );
