@@ -2,9 +2,12 @@
 import sqlite3
 from pathlib import Path
 
-# schema.sql sits at the project root (two levels up from this package).
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schema.sql"
-DEFAULT_DB = Path("techwatch.db")
+# Anchor paths to the project root (two levels up from this package) so the
+# CLI, the GUI and the scheduled task all use the same database regardless of
+# the directory they are launched from.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SCHEMA_PATH = PROJECT_ROOT / "schema.sql"
+DEFAULT_DB = PROJECT_ROOT / "techwatch.db"
 
 
 def connect(db_path=DEFAULT_DB):

@@ -29,6 +29,30 @@ article de la **dernière liste affichée** — lance donc un `list` avant. Chan
 de liste renumérote : `list --unread` trie par date de publication (plus récent
 en haut), `list --tag X` par ordre d'attribution du tag (plus récent en haut).
 
+## Automatisation
+
+Le pipeline `techwatch/pipeline.py` récupère les nouveautés sans interaction
+(plus tard : tri puis envoi d'un rapport par mail). Pour le lancer à la main :
+
+```bash
+python auto.py          # ou : python -m techwatch.pipeline
+```
+
+Chaque exécution est journalisée dans `techwatch.log` (à la racine du projet).
+
+Pour l'exécuter **tous les matins à 8h** via le Planificateur de tâches Windows :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install_task.ps1
+```
+
+Le script crée la tâche `TechwatchRefresh` (compatible portable/batterie, avec
+rattrapage si la machine était éteinte). Pour la supprimer :
+
+```powershell
+Unregister-ScheduledTask -TaskName "TechwatchRefresh" -Confirm:$false
+```
+
 ## Tests
 
 ```bash
