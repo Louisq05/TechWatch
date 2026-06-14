@@ -1,5 +1,6 @@
 """techwatch — CLI entry point."""
 import argparse
+import sys
 
 from techwatch.models import db
 from techwatch.models import article as repo
@@ -8,6 +9,12 @@ from techwatch.views import console
 
 
 def main(argv=None):
+    # Feed content is arbitrary Unicode; Windows consoles default to cp1252,
+    # which crashes on characters like → or em dashes. Force UTF-8 output.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(prog="techwatch", description="Veille tech RSS.")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
