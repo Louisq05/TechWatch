@@ -14,6 +14,11 @@ THEME_STYLE = [
 ]
 OTHER = ("Autre", "📰", "#6c7a89")
 
+# Persistent footer pick: a "smart scroll" antidote to brainrot.
+PICK_URL = "https://www.orangecrumbs.com/"
+PICK_TITLE = "Pour soigner ton brainrot"
+PICK_SUB = "Un scroll qui nourrit le cerveau, sur OrangeCrumbs."
+
 
 def _has(row, key):
     try:
@@ -95,6 +100,7 @@ def format_digest(items):
             tlines.append(f"- {row['title']}  ({_meta(row)})  {_stars(score)}")
             tlines.append(f"  {row['link']}")
         tlines.append("")
+    tlines += [f"— {PICK_TITLE} : {PICK_SUB}", f"  {PICK_URL}", ""]
     text_body = "\n".join(tlines)
 
     # --- HTML newsletter ---
@@ -107,6 +113,15 @@ def format_digest(items):
         )
         blocks += [_article_html(score, row) for score, row in arts]
 
+    pick = (
+        '<div style="margin-top:24px;background:#fff4e6;border:1px solid #ffd9a8;'
+        'border-radius:8px;padding:14px 18px">'
+        f'<a href="{escape(PICK_URL)}" style="color:#e67e22;text-decoration:none;'
+        f'font-weight:700;font-size:15px">💊 {escape(PICK_TITLE)} →</a>'
+        f'<div style="color:#6c7a89;font-size:13px;margin-top:4px">'
+        f"{escape(PICK_SUB)}</div></div>"
+    )
+
     html_body = (
         '<div style="font-family:Segoe UI,Arial,sans-serif;max-width:680px;'
         'margin:auto;color:#1e1f22;padding:8px">'
@@ -116,6 +131,7 @@ def format_digest(items):
         f'<span style="float:right;color:#9aa0a6;font-size:13px">'
         f"{today:%d/%m/%Y} · {n} articles</span></div>"
         + "".join(blocks)
+        + pick
         + '<div style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;'
         'color:#9aa0a6;font-size:12px">Généré par techwatch · '
         "curation automatique de tes sources</div></div>"

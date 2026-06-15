@@ -105,6 +105,14 @@ def test_format_digest_lists_links_and_escapes(conn):
     assert "&lt;b&gt;" in html         # titles are HTML-escaped
     assert "Ma Source" in html         # source shown
     assert "Jane Doe" in html          # author shown when present
+    assert "orangecrumbs.com" in html  # persistent footer pick
+    assert "orangecrumbs.com" in text
+
+
+def test_hacker_news_title_not_flagged_cyber():
+    cfg = ranking.load_config()
+    _score, reasons = ranking.score(_row("Show HN: a cool project on Hacker News"), cfg)
+    assert "Cyber" not in reasons
 
 
 def test_send_digest_ranks_filters_and_marks(conn, monkeypatch):

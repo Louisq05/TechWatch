@@ -20,7 +20,7 @@ mots = ["ia", "intelligence artificielle", "ai", "llm", "gpt", "chatgpt",
 nom = "Cyber"
 poids = 3.0
 mots = ["cyber", "securite", "security", "faille", "vulnerabilite",
-        "vulnerability", "exploit", "malware", "ransomware", "hack", "hacker",
+        "vulnerability", "exploit", "malware", "ransomware", "hack", "hacking",
         "piratage", "breach", "phishing", "cve", "mot de passe", "password"]
 
 [[theme]]
