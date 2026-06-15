@@ -14,6 +14,7 @@ nom = "IA"
 poids = 3.0
 mots = ["ia", "intelligence artificielle", "ai", "llm", "gpt", "chatgpt",
         "openai", "anthropic", "claude", "gemini", "mistral", "copilot",
+        "arthur mensch", "mensch",
         "machine learning", "deep learning", "neural", "modele", "model"]
 
 [[theme]]
@@ -28,6 +29,25 @@ nom = "Espace"
 poids = 3.0
 mots = ["espace", "space", "nasa", "spacex", "fusee", "rocket", "satellite",
         "orbite", "orbital", "mars", "lune", "lunar", "telescope", "astronom"]
+
+[[theme]]
+nom = "Souveraineté"
+poids = 3.0
+mots = ["souverainete", "souverain", "souveraine", "arthur mensch", "mensch",
+        "autonomie strategique", "souverainete numerique"]
+
+[[theme]]
+nom = "Énergie"
+poids = 3.0
+mots = ["nucleaire", "fission", "fusion nucleaire", "reacteur", "iter",
+        "tokamak", "uranium", "energie", "renouvelable", "hydrogene",
+        "photovoltaique", "eolien"]
+
+[[theme]]
+nom = "Défense"
+poids = 2.0
+mots = ["militaire", "military", "drone", "guerre", "war", "warfare",
+        "arme", "weapon", "surveillance", "espionnage", "missile"]
 
 [[theme]]
 nom = "Dev de niche"

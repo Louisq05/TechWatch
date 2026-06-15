@@ -6,6 +6,8 @@ from ..views import email
 from . import mailer, ranking
 
 _LAST = "last_digest_at"
+# Feeds treated as long-form content for the "format long" suggestion.
+LONG_SOURCES = ["Thinkerview"]
 
 
 def send_digest(conn, config=None):
@@ -24,7 +26,8 @@ def send_digest(conn, config=None):
     selected = [item for item in ranked if item[0] > 0][:max_n]
     if not selected:  # nothing scored positively -> fall back to the top few
         selected = ranked[:max_n]
-    subject, text_body, html_body = email.format_digest(selected)
+    long_pick = repo.latest_from_sources(conn, LONG_SOURCES)
+    subject, text_body, html_body = email.format_digest(selected, long_pick)
     mailer.send(subject, text_body, html_body)
     repo.touch_meta_now(conn, _LAST)  # only advance after a successful send
     logging.info("digest : %d/%d article(s) envoyé(s)", len(selected), len(rows))

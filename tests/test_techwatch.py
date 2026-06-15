@@ -115,6 +115,39 @@ def test_hacker_news_title_not_flagged_cyber():
     assert "Cyber" not in reasons
 
 
+def test_new_themes_match_examples():
+    cfg = ranking.load_config()
+    themes = lambda title: set(ranking.score(_row(title), cfg)[1])
+    assert "Souveraineté" in themes("La souveraineté numérique européenne en jeu")
+    assert "Énergie" in themes("Un réacteur nucléaire à fusion bat un record")
+    assert "Défense" in themes("AI trained for military drones in war zones")
+    assert "IA" in themes("Mistral lève des fonds, Arthur Mensch optimiste")
+
+
+def test_latest_from_sources(conn):
+    long_feed = repo.add_feed(conn, "https://ex.com/long", "Thinkerview")
+    news = repo.add_feed(conn, "https://ex.com/news", "Autre")
+    repo.add_article(conn, news, "News", "https://ex.com/n",
+                     published="2026-01-01T00:00:00Z")
+    repo.add_article(conn, long_feed, "Vieux", "https://ex.com/p1",
+                     published="2026-01-01T00:00:00Z")
+    repo.add_article(conn, long_feed, "Entretien récent", "https://ex.com/p2",
+                     published="2026-06-01T00:00:00Z")
+    assert repo.latest_from_sources(conn, ["Thinkerview"])["title"] == "Entretien récent"
+    assert repo.latest_from_sources(conn, ["Inexistant"]) is None
+
+
+def test_format_digest_includes_long_pick(conn):
+    feed_id = repo.add_feed(conn, "https://ex.com/f", "Thinkerview")
+    repo.add_article(conn, feed_id, "Grand entretien", "https://ex.com/v")
+    rows = repo.articles_since(conn, "1970-01-01 00:00:00")
+    items = [(5.0, ["IA"], r) for r in rows]
+    pick = repo.latest_from_sources(conn, ["Thinkerview"])
+    _subject, text, html = email_view.format_digest(items, pick)
+    assert "format long" in text.lower()
+    assert "Grand entretien" in html
+
+
 def test_send_digest_ranks_filters_and_marks(conn, monkeypatch):
     feed_id = repo.add_feed(conn, "https://ex.com/feed")
     repo.add_article(conn, feed_id, "Big AI news", "https://ex.com/a")

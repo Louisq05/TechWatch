@@ -82,6 +82,20 @@ def articles_since(conn, since):
     ).fetchall()
 
 
+def latest_from_sources(conn, names):
+    """Most recent article whose source feed title is in `names`, or None.
+    Used to suggest a long-form pick (e.g. a podcast/video channel)."""
+    if not names:
+        return None
+    placeholders = ",".join("?" for _ in names)
+    return conn.execute(
+        f"SELECT a.*, f.title AS feed_title FROM articles a "
+        f"JOIN feeds f ON f.id = a.feed_id WHERE f.title IN ({placeholders}) "
+        f"ORDER BY a.published DESC, a.fetched_at DESC LIMIT 1",
+        list(names),
+    ).fetchone()
+
+
 def get_meta(conn, key):
     row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
     return row["value"] if row else None

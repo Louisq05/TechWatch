@@ -9,7 +9,10 @@ from html import escape
 # Theme -> (emoji, colour). Order here drives the order of sections.
 THEME_STYLE = [
     ("IA", "🤖", "#5865f2"),
+    ("Souveraineté", "🏛️", "#2c5fb3"),
+    ("Énergie", "⚡", "#27ae60"),
     ("Cyber", "🔒", "#e0533d"),
+    ("Défense", "🛡️", "#7f8c8d"),
     ("Espace", "🚀", "#9b59b6"),
 ]
 OTHER = ("Autre", "📰", "#6c7a89")
@@ -85,8 +88,9 @@ def _article_html(score, row):
     )
 
 
-def format_digest(items):
-    """items: list of (score, reasons, row). Return (subject, text, html)."""
+def format_digest(items, long_pick=None):
+    """items: list of (score, reasons, row); long_pick: an optional long-form
+    article row to suggest. Return (subject, text, html)."""
     n = len(items)
     today = date.today()
     subject = f"techwatch — {n} article(s) du jour ({today:%d/%m/%Y})"
@@ -100,6 +104,10 @@ def format_digest(items):
             tlines.append(f"- {row['title']}  ({_meta(row)})  {_stars(score)}")
             tlines.append(f"  {row['link']}")
         tlines.append("")
+    if long_pick:
+        tlines += ["== 📺 Le format long ==",
+                   f"- {long_pick['title']}  ({_meta(long_pick)})",
+                   f"  {long_pick['link']}", ""]
     tlines += [f"— {PICK_TITLE} : {PICK_SUB}", f"  {PICK_URL}", ""]
     text_body = "\n".join(tlines)
 
@@ -112,6 +120,26 @@ def format_digest(items):
             f"{emoji} {escape(name)}</h2>"
         )
         blocks += [_article_html(score, row) for score, row in arts]
+
+    long_html = ""
+    if long_pick:
+        img = _field(long_pick, "image")
+        img_cell = (
+            f'<td width="116" valign="top"><img src="{escape(img)}" width="104" '
+            f'style="border-radius:6px" alt=""></td>' if img else ""
+        )
+        long_html = (
+            '<h2 style="color:#16a085;border-bottom:2px solid #16a085;'
+            'padding-bottom:4px;margin:24px 0 8px;font-size:16px">'
+            "📺 Le format long</h2>"
+            '<table cellpadding="0" cellspacing="0" style="margin:12px 0;'
+            f'width:100%"><tr>{img_cell}<td valign="top">'
+            f'<a href="{escape(long_pick["link"])}" style="color:#1e1f22;'
+            f'text-decoration:none;font-weight:600;font-size:15px">'
+            f'{escape(long_pick["title"])}</a><br>'
+            f'<span style="color:#6c7a89;font-size:13px">'
+            f"{escape(_meta(long_pick))}</span></td></tr></table>"
+        )
 
     pick = (
         '<div style="margin-top:24px;background:#fff4e6;border:1px solid #ffd9a8;'
@@ -131,6 +159,7 @@ def format_digest(items):
         f'<span style="float:right;color:#9aa0a6;font-size:13px">'
         f"{today:%d/%m/%Y} · {n} articles</span></div>"
         + "".join(blocks)
+        + long_html
         + pick
         + '<div style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;'
         'color:#9aa0a6;font-size:12px">Généré par techwatch · '
