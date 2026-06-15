@@ -7,7 +7,7 @@ from . import mailer, ranking
 
 _LAST = "last_digest_at"
 # Feeds treated as long-form content for the "format long" suggestion.
-LONG_SOURCES = ["Thinkerview"]
+LONG_SOURCES = ["Thinkerview", "ARTE"]
 
 
 def send_digest(conn, config=None):

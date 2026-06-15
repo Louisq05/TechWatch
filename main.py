@@ -21,6 +21,8 @@ def main(argv=None):
     p = sub.add_parser("add-feed", help="Ajouter un flux RSS")
     p.add_argument("url")
 
+    sub.add_parser("import-feeds", help="Ajouter les flux listés dans feeds.txt")
+
     sub.add_parser("refresh", help="Récupérer les nouveaux articles")
 
     p = sub.add_parser("list", help="Lister les articles")
@@ -41,6 +43,12 @@ def main(argv=None):
     if args.cmd == "add-feed":
         feed_id = library.add_feed(conn, args.url)
         print(f"Flux ajouté (#{feed_id}).")
+    elif args.cmd == "import-feeds":
+        lines = (db.PROJECT_ROOT / "feeds.txt").read_text(encoding="utf-8").splitlines()
+        urls = [s for s in (ln.strip() for ln in lines) if s and not s.startswith("#")]
+        for url in urls:
+            library.add_feed(conn, url)
+        print(f"{len(urls)} flux importés depuis feeds.txt.")
     elif args.cmd == "refresh":
         print(f"{library.refresh(conn)} nouvel(s) article(s).")
     elif args.cmd == "list":

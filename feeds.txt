@@ -1,0 +1,40 @@
+# Sources RSS de techwatch — une URL par ligne (# = commentaire).
+# Importer / mettre à jour la base avec :  python main.py import-feeds
+
+# --- Référence / contenu long ---
+https://www.technologyreview.com/feed/
+https://news.ycombinator.com/rss
+https://www.youtube.com/feeds/videos.xml?channel_id=UCQgWpmt02UtJkyO32HGUASQ
+https://www.youtube.com/feeds/videos.xml?channel_id=UCwI-JbGNsojunnHbFAc0M4Q
+
+# --- EN — actu tech ---
+https://feeds.arstechnica.com/arstechnica/index
+https://www.theverge.com/rss/index.xml
+https://techcrunch.com/feed/
+https://www.wired.com/feed/rss
+https://www.engadget.com/rss.xml
+https://www.theregister.com/headlines.atom
+http://rss.slashdot.org/Slashdot/slashdotMain
+
+# --- EN — dev & science ---
+https://github.blog/feed/
+https://stackoverflow.blog/feed/
+https://dev.to/feed
+https://simonwillison.net/atom/everything/
+https://www.quantamagazine.org/feed/
+https://krebsonsecurity.com/feed/
+
+# --- FR — actu tech ---
+https://korben.info/feed
+https://www.numerama.com/feed/
+https://www.journaldugeek.com/feed/
+https://www.frandroid.com/feed
+https://www.01net.com/feed/
+https://www.clubic.com/feed/news.rss
+https://www.zdnet.fr/feeds/rss/actualites/
+https://www.lemonde.fr/pixels/rss_full.xml
+
+# --- FR — dev & indé ---
+https://www.developpez.com/index/rss
+https://linuxfr.org/news.atom
+https://next.ink/feed/

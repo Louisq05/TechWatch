@@ -14,12 +14,17 @@ pip install -r requirements.txt
 
 ```bash
 python main.py add-feed https://example.com/feed.xml
+python main.py import-feeds          # ajoute toutes les sources de feeds.txt
 python main.py refresh
 python main.py list --unread
 python main.py read 3
 python main.py tag 3 ia
 python main.py list --tag ia
 ```
+
+Les sources suivies sont listées dans **`feeds.txt`** (une URL par ligne) ;
+`import-feeds` les ajoute toutes d'un coup — pratique pour repartir d'une base
+vide ou sur une autre machine.
 
 ### Numéros d'articles
 
